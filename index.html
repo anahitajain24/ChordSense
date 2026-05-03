@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Happy or Sad</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: #f5f0eb;
+        font-family: Georgia, serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 22px;
+        font-weight: normal;
+        color: #2c2c2c;
+        margin-bottom: 6px;
+        letter-spacing: 0.02em;
+      }
+
+      .subtitle {
+        font-size: 14px;
+        color: #888;
+        margin-bottom: 28px;
+      }
+
+      .score-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 28px;
+      }
+
+      .metric {
+        flex: 1;
+        background: #f5f0eb;
+        border-radius: 12px;
+        padding: 10px 8px;
+        margin: 0 4px;
+      }
+
+      .metric .lbl {
+        font-size: 11px;
+        color: #aaa;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .metric .val {
+        font-size: 20px;
+        color: #2c2c2c;
+        font-weight: normal;
+      }
+
+      .play-area {
+        background: #f5f0eb;
+        border-radius: 16px;
+        padding: 32px 20px;
+        margin-bottom: 20px;
+      }
+
+      .play-label {
+        font-size: 13px;
+        color: #888;
+        margin-bottom: 20px;
+      }
+
+      #btn-play {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: none;
+        background: #2c2c2c;
+        color: #ffffff;
+        font-size: 26px;
+        cursor: pointer;
+        margin-bottom: 12px;
+        transition: background 0.15s, transform 0.1s;
+      }
+
+      #btn-play:hover {
+        background: #444;
+      }
+
+      #btn-play:active {
+        transform: scale(0.95);
+      }
+
+      #btn-play:disabled {
+        background: #ccc;
+        cursor: default;
+      }
+
+      .replay-hint {
+        font-size: 12px;
+        color: #bbb;
+      }
+
+      .answer-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .ans-btn {
+        padding: 18px 10px;
+        border-radius: 14px;
+        border: 2px solid #e0d9d0;
+        background: #ffffff;
+        font-size: 16px;
+        color: #2c2c2c;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      }
+
+      .ans-btn:hover:not(:disabled) {
+        background: #f5f0eb;
+        border-color: #c0b8ae;
+      }
+
+      .ans-btn:active:not(:disabled) {
+        transform: scale(0.97);
+      }
+
+      .ans-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      .ans-btn.correct {
+        background: #e6f4ec;
+        border-color: #4caf82;
+        color: #1a5c38;
+        opacity: 1;
+      }
+
+      .ans-btn.wrong {
+        background: #faeaea;
+        border-color: #e07070;
+        color: #7a2020;
+        opacity: 1;
+      }
+
+      #result {
+        min-height: 36px;
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 16px;
+        line-height: 1.6;
+      }
+
+      #result.correct { color: #1a5c38; }
+      #result.wrong   { color: #7a2020; }
+
+      #btn-again {
+        display: none;
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        border: 2px solid #2c2c2c;
+        background: #2c2c2c;
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      #btn-again:hover { background: #444; border-color: #444; }
+    </style>
+  </head>
+  <body>
+
+    <div class="card">
+
+      <h1>Happy or Sad?</h1>
+      <p class="subtitle">Listen to the chord. Trust your ear.</p>
+
+      <div class="score-row">
+        <div class="metric"><div class="lbl">Score</div><div class="val" id="score">0</div></div>
+        <div class="metric"><div class="lbl">Round</div><div class="val" id="round">1</div></div>
+        <div class="metric"><div class="lbl">Total</div><div class="val">10</div></div>
+      </div>
+
+      <div class="play-area">
+        <div class="play-label" id="play-label">Press play to hear a chord</div>
+        <button id="btn-play" onclick="playChord()">&#9654;</button>
+        <div class="replay-hint" id="replay-hint">tap to listen</div>
+      </div>
+
+      <div class="answer-row">
+        <button class="ans-btn" id="btn-happy" onclick="guess('happy')" disabled>Happy</button>
+        <button class="ans-btn" id="btn-sad" onclick="guess('sad')" disabled>Sad</button>
+      </div>
+
+      <p id="result"></p>
+
+      <button id="btn-again" onclick="restartGame()">Play again</button>
+
+    </div>
+
+    <script>
+      var options = ["happy", "sad"];
+      var correctAnswer = options[Math.floor(Math.random() * 2)];
+      var score = 0;
+      var round = 1;
+      var totalRounds = 10;
+
+      function playChord() {
+        var context = new AudioContext();
+
+        var happyFreqs = [261.63, 329.63, 392.00];
+        var sadFreqs =   [261.63, 311.13, 392.00];
+
+        var frequencies = correctAnswer === "happy" ? happyFreqs : sadFreqs;
+
+        frequencies.forEach(function(freq) {
+          var osc = context.createOscillator();
+          var gain = context.createGain();
+          osc.frequency.value = freq;
+          gain.gain.value = 0.2;
+          osc.connect(gain);
+          gain.connect(context.destination);
+          osc.start();
+          osc.stop(context.currentTime + 1.2);
+        });
+
+        document.getElementById("btn-happy").disabled = false;
+        document.getElementById("btn-sad").disabled = false;
+        document.getElementById("play-label").textContent = "What does this chord feel like?";
+        document.getElementById("replay-hint").textContent = "tap again to replay";
+      }
+
+      function guess(answer) {
+        document.getElementById("btn-happy").disabled = true;
+        document.getElementById("btn-sad").disabled = true;
+
+        var resultEl = document.getElementById("result");
+        var happyBtn = document.getElementById("btn-happy");
+        var sadBtn = document.getElementById("btn-sad");
+
+        happyBtn.classList.add(correctAnswer === "happy" ? "correct" : "wrong");
+        sadBtn.classList.add(correctAnswer === "sad" ? "correct" : "wrong");
+
+        if (answer === correctAnswer) {
+          score = score + 1;
+          resultEl.textContent = "Correct — your ear is working.";
+          resultEl.className = "correct";
+        } else {
+          resultEl.textContent = "Not quite. That was a " + correctAnswer + " chord.";
+          resultEl.className = "wrong";
+        }
+
+        document.getElementById("score").textContent = score;
+
+        if (round === totalRounds) {
+          endGame();
+        } else {
+          round = round + 1;
+          setTimeout(nextRound, 1200);
+        }
+      }
+
+      function nextRound() {
+        correctAnswer = options[Math.floor(Math.random() * 2)];
+        document.getElementById("btn-happy").className = "ans-btn";
+        document.getElementById("btn-sad").className = "ans-btn";
+        document.getElementById("btn-happy").disabled = true;
+        document.getElementById("btn-sad").disabled = true;
+        document.getElementById("result").textContent = "";
+        document.getElementById("result").className = "";
+        document.getElementById("round").textContent = round;
+        document.getElementById("play-label").textContent = "Press play to hear a chord";
+        document.getElementById("replay-hint").textContent = "tap to listen";
+      }
+
+      function endGame() {
+        document.getElementById("btn-play").disabled = true;
+        document.getElementById("play-label").textContent = "Game over";
+        document.getElementById("result").textContent = "You scored " + score + " out of " + totalRounds + ". Not bad at all.";
+        document.getElementById("result").className = "";
+        document.getElementById("btn-again").style.display = "block";
+      }
+
+      function restartGame() {
+        score = 0;
+        round = 1;
+        correctAnswer = options[Math.floor(Math.random() * 2)];
+        document.getElementById("score").textContent = "0";
+        document.getElementById("round").textContent = "1";
+        document.getElementById("btn-play").disabled = false;
+        document.getElementById("btn-happy").className = "ans-btn";
+        document.getElementById("btn-sad").className = "ans-btn";
+        document.getElementById("btn-happy").disabled = true;
+        document.getElementById("btn-sad").disabled = true;
+        document.getElementById("result").textContent = "";
+        document.getElementById("result").className = "";
+        document.getElementById("play-label").textContent = "Press play to hear a chord";
+        document.getElementById("replay-hint").textContent = "tap to listen";
+        document.getElementById("btn-again").style.display = "none";
+      }
+    </script>
+
+  </body>
+</html>
